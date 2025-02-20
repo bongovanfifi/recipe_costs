@@ -3,9 +3,10 @@ import datetime as dt
 from sqlalchemy import text
 import sys
 from pathlib import Path
+import time
+
 sys.path.append(str(Path(__file__).parent.parent))
 from utils import get_connection
-import time
 
 
 def check_password():
@@ -15,16 +16,16 @@ def check_password():
 
     # Get client IP
     ip = st.query_params.get("client_ip", ["unknown"])[0]
-    
+
     # Check lockout status
     with get_connection().session as session:
         lockout = session.execute(
             text("SELECT attempts, last_attempt FROM lockouts WHERE ip = :ip"),
-            {"ip": ip}
+            {"ip": ip},
         ).fetchone()
-        
+
         current_time = int(dt.datetime.now().timestamp())
-        
+
         if lockout and lockout.attempts >= 10:
             if current_time - lockout.last_attempt < 300:  # 5 minute lockout
                 st.error("Too many attempts. Please wait 5 minutes.")
@@ -33,17 +34,19 @@ def check_password():
             else:
                 # Reset attempts after lockout period
                 session.execute(
-                    text("UPDATE lockouts SET attempts = 0 WHERE ip = :ip"),
-                    {"ip": ip}
+                    text("UPDATE lockouts SET attempts = 0 WHERE ip = :ip"), {"ip": ip}
                 )
                 session.commit()
 
     with st.form("login", clear_on_submit=True):
         password = st.text_input("Password", type="password", key="pwd")
         submitted = st.form_submit_button("Login")
-        
+
         if submitted:
-            if password == st.secrets.passwords.kitchen or password == st.secrets.passwords.admin:
+            if (
+                password == st.secrets.passwords.kitchen
+                or password == st.secrets.passwords.admin
+            ):
                 st.session_state.authenticated = True
                 st.rerun()
                 return True
@@ -51,21 +54,24 @@ def check_password():
                 # Record failed attempt
                 with get_connection().session as session:
                     session.execute(
-                        text("""
+                        text(
+                            """
                             INSERT INTO lockouts (ip, attempts, last_attempt) 
                             VALUES (:ip, 1, :time)
                             ON CONFLICT(ip) DO UPDATE SET 
                             attempts = attempts + 1,
                             last_attempt = :time
-                        """),
-                        {"ip": ip, "time": current_time}
+                        """
+                        ),
+                        {"ip": ip, "time": current_time},
                     )
                     session.commit()
                 st.error("Incorrect password")
                 time.sleep(1)
                 return False
-    
+
     return False
+
 
 if not check_password():
     st.stop()
@@ -77,7 +83,9 @@ st.title("Ingredient Cost Entry")
 ingredients = conn.query("SELECT * FROM ingredients ORDER BY name", ttl=0)
 
 if ingredients.empty:
-    st.error("No ingredients found in database. Please add ingredients through the admin page.")
+    st.error(
+        "No ingredients found in database. Please add ingredients through the admin page."
+    )
     st.stop()
 
 st.markdown(
@@ -102,6 +110,7 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
 
 def display_ingredient_status():
     """Display all ingredient status tables"""
@@ -130,7 +139,7 @@ def display_ingredient_status():
     FROM ingredients i
     JOIN latest_prices lp ON i.id = lp.ingredient_id
     JOIN prices p ON p.ingredient_id = i.id AND p.date = lp.latest_date
-    WHERE lp.latest_date < unixepoch() - 7776000
+    WHERE lp.latest_date < strftime('%s', 'now', '-90 days')
     ORDER BY p.date ASC;
     """
 
@@ -148,7 +157,7 @@ def display_ingredient_status():
         FROM prices
         GROUP BY ingredient_id
     )
-    AND p.date >= unixepoch() - 7776000
+    AND p.date >= strftime('%s', 'now', '-90 days')
     ORDER BY i.name;
     """
 
@@ -170,6 +179,7 @@ def display_ingredient_status():
     current_prices = conn.query(current_prices_query, ttl=0)
     st.dataframe(current_prices)
 
+
 with st.form("price_entry", clear_on_submit=True):
     ingredient = st.selectbox(
         "Ingredient", ingredients["name"].tolist(), key="ingredient"
@@ -187,6 +197,8 @@ with st.form("price_entry", clear_on_submit=True):
     if st.form_submit_button("Save"):
         if cost <= 0 or quantity <= 0:
             st.exception(ValueError("Cost and quantity must be greater than 0"))
+        elif str(cost).count(".") == 1 and len(str(cost).split(".")[1]) > 2:
+            st.error("Cost cannot have more than 2 decimal places")
         else:
             ingredient_id = int(
                 ingredients[ingredients["name"] == ingredient]["id"].iloc[0]
@@ -195,11 +207,13 @@ with st.form("price_entry", clear_on_submit=True):
             try:
                 with conn.session as session:
                     session.execute(
-                        text("""
+                        text(
+                            """
                         INSERT INTO prices 
                         (ingredient_name, date, price, unit, quantity, ingredient_id) 
                         VALUES (:name, :date, :price, :unit, :quantity, :ingredient_id)
-                        """),
+                        """
+                        ),
                         params={
                             "name": ingredient,
                             "date": timestamp,
