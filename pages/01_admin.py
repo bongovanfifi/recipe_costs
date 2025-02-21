@@ -4,6 +4,7 @@ from sqlalchemy import text
 import sys
 from pathlib import Path
 import datetime as dt
+import io
 
 sys.path.append(str(Path(__file__).parent.parent))
 from utils import get_connection
@@ -225,22 +226,63 @@ st.dataframe(ingredients)
 
 
 st.subheader("Database Backup")
-if st.button("Backup to S3"):
+if st.button("Backup"):
     try:
+        prices_data = conn.query(
+            """
+            SELECT 
+                p.id,
+                p.ingredient_id,
+                i.name as ingredient_name,
+                p.price,
+                p.unit,
+                p.quantity,
+                p.date
+            FROM prices p
+            JOIN ingredients i ON p.ingredient_id = i.id
+            ORDER BY p.date DESC
+        """
+        )
+        parquet_buffer = io.BytesIO()
+        prices_data.to_parquet(parquet_buffer)
+        parquet_buffer.seek(0)
+        backup_filename_parquet = (
+            f"prices_backup_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
+        )
+        s3_path_parquet = f"item-costs/backups/{backup_filename_parquet}"
         s3 = boto3.client(
             "s3",
             aws_access_key_id=st.secrets.aws.access_key_id,
             aws_secret_access_key=st.secrets.aws.secret_access_key,
         )
+        s3.upload_fileobj(parquet_buffer, st.secrets.aws.bucket_name, s3_path_parquet)
+        log_action(conn, "backup", f"Prices backed up to S3 as {s3_path_parquet}")
+        st.success(f"Prices backed up successfully as {backup_filename_parquet}")
         backup_filename = f"db_backup_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
         s3_path = f"item-costs/backups/{backup_filename}"
-
         with open(".streamlit/db.db", "rb") as db_file:
             s3.upload_fileobj(db_file, st.secrets.aws.bucket_name, s3_path)
         log_action(conn, "backup", f"Database backed up to S3 as {s3_path}")
         st.success(f"Database backed up successfully as {backup_filename}")
     except Exception as e:
         st.error(f"Backup failed: {str(e)}")
+
+st.subheader("Comments")
+comments = conn.query(
+    """
+    SELECT 
+        datetime(date, 'unixepoch') as timestamp,
+        comment 
+    FROM comments 
+    ORDER BY date DESC
+    LIMIT 50
+    """,
+    ttl=0,
+)
+if comments.empty:
+    st.info("No comments yet")
+else:
+    st.dataframe(comments)
 
 # Show logs
 st.subheader("Action Logs")
