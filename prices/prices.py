@@ -6,7 +6,7 @@ from pathlib import Path
 import time
 
 sys.path.append(str(Path(__file__).parent.parent))
-import utils as u
+import shared.utils as u
 import pandas as pd
 
 
@@ -71,7 +71,7 @@ if not check_password():
 
 st.title("Ingredient Cost Entry")
 
-db = u.get_db()
+db = u.get_db("prices")
 ingredients = db.get_all_ingredients()
 if ingredients.empty:
     st.error("No ingredients found.")

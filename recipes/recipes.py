@@ -1,20 +1,22 @@
 import json
+import sys
+from pathlib import Path
 
 import streamlit as st
 import boto3
 import pandas as pd
 
-import utils as u
+sys.path.append(str(Path(__file__).parent.parent))
+from shared import utils as u
 
-db = u.get_db()
+db = u.get_db("recipes")
 s3 = boto3.client("s3")
 # Note this is different from the other tool.
 prices = u.get_new_entries(db.get_all_prices(), ["ingredient_id"])
 ingredients = u.get_new_entries(db.get_all_ingredients(), ["id"])
 
-bucket = st.secrets.aws.bucket_name
-key_prefix = st.secrets.aws.key_prefix
-recipe_key = f"{key_prefix}recipes.json"
+bucket = st.secrets.shared_aws.bucket_name
+recipe_key = f"{st.secrets.shared_aws.key_prefix}recipes.json"
 
 try:
     response = s3.get_object(Bucket=bucket, Key=recipe_key)

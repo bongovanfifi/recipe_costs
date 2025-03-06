@@ -4,23 +4,6 @@ This was made for a small business that wanted to pay nothing for the infrastruc
 
 Streamlit has recently added an experimental st.login(). I mean to transition to that once it's stable.
 
-
-Your secrets.toml should look like this:
-
-```
-[connections.db]
-url = "foo"
-
-[passwords]
-admin = "foo"
-kitchen = "foo"
-
-
-[aws]
-access_key_id = "foo"
-secret_access_key = "foo"
-region = "foo"
-``` 
 You also have to set up an IAM role with put and scan permissions for DynamoDB.
 
 With this app, I'm continuing my habit of dedicating a full day to going from nothing to an MVP. In this case there was way more work than I thought. In hindisght, maybe I should have made this a normal React app. I had not used Streamlit before this. I assumed it would help much more than it did.
