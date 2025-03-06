@@ -46,7 +46,7 @@ class DynamoDBConnector:
             "dynamodb",
             aws_access_key_id=st.secrets[app].access_key_id,
             aws_secret_access_key=st.secrets[app].secret_access_key,
-            region_name=st.secrets[app].region,
+            region_name=st.secrets.shared_aws.region,
         )
         self.app = app
         self.prices = self.dynamodb.Table("prices")

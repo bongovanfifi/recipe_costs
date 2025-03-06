@@ -140,7 +140,7 @@ with st.form("edit_recipe", clear_on_submit=False):
             st.rerun()
         if "success_edit" in st.session_state:
             st.success(st.session_state.success_edit)
-            del st.session_state.success_delete
+            del st.session_state.success_edit
 
 st.subheader("Delete Recipe")
 
