@@ -11,6 +11,10 @@ import pandas as pd
 
 
 # TODO: This is a bad way of authenticating. A week or two after I added it, streamlit added st.login(), but at time of writing it's still in the expiremental phase. Replace all this dumb sqlite stuff with st.login() when it's stable.
+
+# TODO: needs real error handling...
+
+
 def check_password():
     """Check if user has kitchen password with persistent rate limiting"""
     if st.session_state.get("authenticated"):
@@ -78,12 +82,12 @@ if ingredients.empty:
     st.stop()
 ingredients = u.get_new_entries(ingredients, ["id"])
 prices = db.get_all_prices()
+if not prices.empty:
+    prices = u.get_new_entries(prices, ["ingredient_id"])
 
 
 def display_ingredient_status():
-    if not prices.empty:
-        newest_prices = u.get_new_entries(prices, ["ingredient_id"])
-    else:
+    if prices.empty:
         st.info("No prices recorded yet, all prices missing")
         return
 
@@ -94,10 +98,9 @@ def display_ingredient_status():
         st.success("✅ No Missing Ingredients")
     else:
         st.dataframe(missing["name"], use_container_width=True)
-
     st.subheader("Prices More Than 90 Days Old")
-    old_prices = newest_prices[
-        newest_prices["timestamp"] <= int(time.time()) - 7776000
+    old_prices = prices[
+        prices["timestamp"] <= int(time.time()) - 7776000
     ]  # 90 days in seconds
     if not old_prices.empty:
         old_with_names = pd.merge(
@@ -115,7 +118,7 @@ def display_ingredient_status():
         st.success("✅ All prices that are not missing are up to date")
 
     st.subheader("Current Prices")
-    u.display_df(newest_prices)
+    u.display_df(prices)
 
 
 with st.form("price_entry", clear_on_submit=True):
@@ -144,7 +147,6 @@ with st.form("price_entry", clear_on_submit=True):
                 db.put_price(
                     selected_ingredient["name"], ingredient_id, price, unit, quantity
                 )
-                prices = db.get_all_prices()
                 st.success(f"""{selected_ingredient["name"]} price saved!""")
             except Exception as e:
                 st.exception(e)
