@@ -10,8 +10,16 @@ import pandas as pd
 sys.path.append(str(Path(__file__).parent.parent))
 from shared import utils as u
 
+if not u.check_password():
+    st.stop()
+
 db = u.get_db("recipes")
-s3 = boto3.client("s3")
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=st.secrets.recipes.aws_access_key_id,
+    aws_secret_access_key=st.secrets.recipes.aws_secret_access_key,
+    region_name=st.secrets.recipes.region,
+)
 prices = u.get_new_entries(db.get_all_prices(), ["ingredient_id"])
 ingredients = u.get_new_entries(db.get_all_ingredients(), ["id"])
 

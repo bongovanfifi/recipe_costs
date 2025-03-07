@@ -12,7 +12,7 @@ import time
 # TODO: This is a bad way of authenticating. A week or two after I added it, streamlit added st.login(), but at time of writing it's still in the expiremental phase. Replace all this dumb sqlite stuff with st.login() when it's stable.
 
 
-if not u.check_password():
+if not u.check_password("kitchen"):
     st.stop()
 
 db = u.get_db("prices")
