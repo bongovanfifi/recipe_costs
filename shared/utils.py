@@ -38,16 +38,17 @@ class DynamoDBConnector:
     """AWS DynamoDB connector for both prices and ingredients data"""
 
     # This setup with DynamoDB is hypothetically more expensive, but we're moving so little data that we can easily stay in free tier forever. Also it's like 10x faster than Lambdas.
-    # In any case, it's good to maintain this interface where the PriceHistoryConnector can add_price or get all_prices as a df, and then if the backend changes to the Lambda solution none of the logic outside of this file has to change.
+    # In any case, it's good to maintain this interface where get_db can add_price or get all_prices as a df, and then if the backend changes to the Lambda solution none of the logic outside of this file has to change.
 
-    def __init__(self) -> None:
+    def __init__(self, app: str):
         """Initialize DynamoDB client using streamlit secrets"""
         self.dynamodb = boto3.resource(
             "dynamodb",
-            aws_access_key_id=st.secrets.aws.access_key_id,
-            aws_secret_access_key=st.secrets.aws.secret_access_key,
-            region_name=st.secrets.aws.region,
+            aws_access_key_id=st.secrets[app].access_key_id,
+            aws_secret_access_key=st.secrets[app].secret_access_key,
+            region_name=st.secrets.shared_aws.region,
         )
+        self.app = app
         self.prices = self.dynamodb.Table("prices")
         self.ingredients = self.dynamodb.Table("ingredients")
 
@@ -137,9 +138,9 @@ class DynamoDBConnector:
         return pd.DataFrame(items_json)
 
 
-def get_db() -> DynamoDBConnector:
+def get_db(app: str) -> DynamoDBConnector:
     """Get unified database connector"""
-    return DynamoDBConnector()
+    return DynamoDBConnector(app)
 
 
 ## shared, improve this

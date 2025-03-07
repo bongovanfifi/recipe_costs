@@ -5,7 +5,7 @@ from pathlib import Path
 import datetime as dt
 
 sys.path.append(str(Path(__file__).parent.parent))
-import utils as u
+import shared.utils as u
 import time
 
 
@@ -66,7 +66,7 @@ def check_admin_password():
 if not check_admin_password():
     st.stop()
 
-db = u.get_db()
+db = u.get_db("prices")
 
 ingredients = db.get_all_ingredients()
 if ingredients.empty:
