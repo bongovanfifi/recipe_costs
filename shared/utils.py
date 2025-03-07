@@ -143,9 +143,6 @@ def get_db(app: str) -> DynamoDBConnector:
     return DynamoDBConnector(app)
 
 
-## shared, improve this
-
-
 def display_df(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty or "timestamp" not in df.columns:
         return df
@@ -179,3 +176,9 @@ available_units = (
     "gal",
     "unit",
 )
+
+
+def show_success_once(message_name):
+    if st.session_state.get(message_name):
+        st.success(st.session_state[message_name])
+        del st.session_state[message_name]

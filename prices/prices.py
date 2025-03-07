@@ -147,8 +147,12 @@ with st.form("price_entry", clear_on_submit=True):
                 db.put_price(
                     selected_ingredient["name"], ingredient_id, price, unit, quantity
                 )
-                st.success(f"""{selected_ingredient["name"]} price saved!""")
+                st.session_state.success_price_add = (
+                    f"""Added {selected_ingredient["name"]}"""
+                )
+                st.rerun()
             except Exception as e:
                 st.exception(e)
+        u.show_success_once("success_price_add")
 
 display_ingredient_status()

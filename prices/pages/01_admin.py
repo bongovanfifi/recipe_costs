@@ -35,7 +35,6 @@ def check_admin_password():
     with st.form("admin_login", clear_on_submit=True):
         password = st.text_input("Admin Password", type="password", key="pwd")
         submitted = st.form_submit_button("Login")
-
         if submitted:
             if password == st.secrets.passwords.admin:
                 st.session_state.admin_authenticated = True
@@ -59,7 +58,6 @@ def check_admin_password():
                 st.error("Incorrect password")
                 time.sleep(1)
                 return False
-
     return False
 
 
@@ -94,10 +92,7 @@ with st.form("add_ingredient", clear_on_submit=True):
                 st.rerun()
             except Exception as e:
                 st.error(f"Update failed: {e}")
-    if "success_message_add" in st.session_state:
-        st.success(st.session_state.success_message_add)
-        del st.session_state.success_message_add
-
+    u.show_success_once("success_message_add")
 if ingredients.empty:
     st.error("No ingredients found.")
     st.stop()
@@ -129,9 +124,7 @@ with st.form("rename_ingredient", clear_on_submit=True):
                 st.rerun()
             except Exception as e:
                 st.error(f"Update failed: {e}")
-    if "success_message_rename" in st.session_state:
-        st.success(st.session_state.success_message_rename)
-        del st.session_state.success_message_rename
+    u.show_success_once("success_message_rename")
 
 
 st.subheader("Current Ingredients")

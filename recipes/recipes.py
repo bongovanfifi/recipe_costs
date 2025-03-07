@@ -97,10 +97,7 @@ with st.form("new_recipe", clear_on_submit=True):
         st.session_state.success_new = f"Successfully created {new_name}"
         save_recipes()
         st.rerun()
-    if "success_new" in st.session_state:
-        st.success(st.session_state.success_new)
-        del st.session_state.success_new
-
+    u.show_success_once("success_new")
 
 st.subheader("Edit Recipe")
 
@@ -174,9 +171,7 @@ with st.form("edit_recipe", clear_on_submit=False):
             save_recipes()
             st.session_state.success_edit = f"Saved Changes to {edit_recipe}"
             st.rerun()
-        if "success_edit" in st.session_state:
-            st.success(st.session_state.success_edit)
-            del st.session_state.success_edit
+        u.show_success_once("success_edit")
 
 st.subheader("Delete Recipe")
 
@@ -193,9 +188,7 @@ with st.form(f"delete_recipe", clear_on_submit=True):
     else:
         st.write("No Recipes to Delete")
         submitted = st.form_submit_button("Delete", disabled=True)
-    if "success_delete" in st.session_state:
-        st.success(st.session_state.success_delete)
-        del st.session_state.success_delete
+    u.show_success_once("success_delete")
 
 u.display_df(prices)
 
