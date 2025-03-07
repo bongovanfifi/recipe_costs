@@ -110,7 +110,10 @@ with st.form("edit_recipe", clear_on_submit=False):
     if edit_recipe:
         edit_ingredients = recipes[edit_recipe]["ingredients"].copy()
         batch_size = st.number_input(
-            "Batch Size", placeholder=edit_recipe["batch_size"], step=1
+            "Batch Size",
+            placeholder=recipes[edit_recipe]["batch_size"],
+            step=1,
+            min_value=1,
         )
         if (
             "ingredient_name" in edit_ingredients.columns
@@ -150,6 +153,12 @@ with st.form("edit_recipe", clear_on_submit=False):
         submitted = st.form_submit_button("Save Changes")
 
         if submitted:
+            if (
+                edited_ingredients.isnull().any().any()
+                or (edited_ingredients == "").any().any()
+            ):
+                st.error("Please fill in all required fields")
+                st.stop()
             new_ingredients = edited_ingredients.copy()  # TODO: sloppy naming..
             new_ingredients["ingredient_name"] = new_ingredients["ingredient"]
             for i, row in new_ingredients.iterrows():
@@ -158,7 +167,10 @@ with st.form("edit_recipe", clear_on_submit=False):
             new_ingredients = new_ingredients.drop(
                 columns=["ingredient"], errors="ignore"
             )
-            recipes[edit_recipe] = new_ingredients
+            recipes[edit_recipe] = {
+                "batch_size": batch_size,
+                "ingredients": new_ingredients,
+            }
             save_recipes()
             st.session_state.success_edit = f"Saved Changes to {edit_recipe}"
             st.rerun()
