@@ -14,62 +14,7 @@ import pandas as pd
 
 # TODO: needs real error handling...
 
-
-def check_password():
-    """Check if user has kitchen password with persistent rate limiting"""
-    if st.session_state.get("authenticated"):
-        return True
-    ip = st.query_params.get("client_ip", ["unknown"])[0]
-    with u.get_local_connection().session as session:
-        lockout = session.execute(
-            text("SELECT attempts, last_attempt FROM lockouts WHERE ip = :ip"),
-            {"ip": ip},
-        ).fetchone()
-        current_time = int(dt.datetime.now().timestamp())
-        if lockout and lockout.attempts >= 10:
-            if current_time - lockout.last_attempt < 300:
-                st.error("Too many attempts. Please wait 5 minutes.")
-                time.sleep(2)
-                return False
-            else:
-                session.execute(
-                    text("UPDATE lockouts SET attempts = 0 WHERE ip = :ip"), {"ip": ip}
-                )
-                session.commit()
-
-    with st.form("login", clear_on_submit=True):
-        password = st.text_input("Password", type="password", key="pwd")
-        submitted = st.form_submit_button("Login")
-        if submitted:
-            if (
-                password == st.secrets.passwords.kitchen
-                or password == st.secrets.passwords.admin
-            ):
-                st.session_state.authenticated = True
-                st.rerun()
-                return True
-            else:
-                with u.get_local_connection().session as session:
-                    session.execute(
-                        text(
-                            """
-                            INSERT INTO lockouts (ip, attempts, last_attempt) 
-                            VALUES (:ip, 1, :time)
-                            ON CONFLICT(ip) DO UPDATE SET 
-                            attempts = attempts + 1,
-                            last_attempt = :time
-                        """
-                        ),
-                        {"ip": ip, "time": current_time},
-                    )
-                    session.commit()
-                st.error("Incorrect password")
-                time.sleep(1)
-                return False
-    return False
-
-
-if not check_password():
+if not u.check_password("kitchen"):
     st.stop()
 
 

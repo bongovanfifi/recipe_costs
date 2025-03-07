@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Dict, Any
 from pathlib import Path
 import uuid
+import datetime as dt
 
 from sqlalchemy import text, create_engine
 import streamlit as st
@@ -141,6 +142,62 @@ class DynamoDBConnector:
 def get_db(app: str) -> DynamoDBConnector:
     """Get unified database connector"""
     return DynamoDBConnector(app)
+
+
+def check_password(password_name="admin"):
+    """Check if user has password with persistent rate limiting"""
+    if st.session_state.get("authenticated"):
+        return True
+    ip = st.query_params.get("client_ip", ["unknown"])[0]
+    with get_local_connection().session as session:
+        lockout = session.execute(
+            text("SELECT attempts, last_attempt FROM lockouts WHERE ip = :ip"),
+            {"ip": ip},
+        ).fetchone()
+        current_time = int(dt.datetime.now().timestamp())
+        if lockout and lockout.attempts >= 10:
+            if current_time - lockout.last_attempt < 300:
+                st.error("Too many attempts. Please wait 5 minutes.")
+                time.sleep(2)
+                return False
+            else:
+                session.execute(
+                    text("UPDATE lockouts SET attempts = 0 WHERE ip = :ip"), {"ip": ip}
+                )
+                session.commit()
+
+    with st.form("login", clear_on_submit=True):
+        password = st.text_input(
+            f"{password_name.title()} Password", type="password", key="pwd"
+        )
+        submitted = st.form_submit_button("Login")
+        if submitted:
+            if password in (
+                st.secrets.passwords[password_name],
+                st.secrets.passwords.admin,
+            ):
+                st.session_state.authenticated = True
+                st.rerun()
+                return True
+            else:
+                with get_local_connection().session as session:
+                    session.execute(
+                        text(
+                            """
+                            INSERT INTO lockouts (ip, attempts, last_attempt) 
+                            VALUES (:ip, 1, :time)
+                            ON CONFLICT(ip) DO UPDATE SET 
+                            attempts = attempts + 1,
+                            last_attempt = :time
+                        """
+                        ),
+                        {"ip": ip, "time": current_time},
+                    )
+                    session.commit()
+                st.error("Incorrect password")
+                time.sleep(1)
+                return False
+    return False
 
 
 def display_df(df: pd.DataFrame) -> pd.DataFrame:
