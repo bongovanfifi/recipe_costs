@@ -18,7 +18,7 @@ s3 = boto3.client(
     "s3",
     aws_access_key_id=st.secrets.recipes.access_key_id,
     aws_secret_access_key=st.secrets.recipes.secret_access_key,
-    region_name=st.secrets.recipes.region,
+    region_name=st.secrets.shared_aws.region,
 )
 prices = u.get_new_entries(db.get_all_prices(), ["ingredient_id"])
 ingredients = u.get_new_entries(db.get_all_ingredients(), ["id"])
