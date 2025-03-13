@@ -72,10 +72,12 @@ with st.expander("How To Use This Tool"):
              
 You don't have to calculate the cost per unit or anything. That's automated.
              
-Don't select "unit" in the unit field for things that are not used "by unit". For example, "Forminha" isn't used by weight, one is used every time. If you buy 1000 at a time, you would enter the quantity as 1000, and "unit" would be the unit. However, flour is not by unit, so enter the number of pounds/kg/etc purchased."""
+Don't select "unit" in the unit field for things that are not used "by unit". For example, "Forminha" isn't used by weight, one is used every time. If you buy 1000 at a time, you would enter the quantity as 1000, and "unit" would be the unit. However, flour is not by unit, so enter the number of pounds/kg/etc purchased.
+
+You can add or rename ingredients in the ingredients page. This includes adding translations or alternative names along with the original name. The tools will still apply old prices to an ingredient when it's renamed, so you won't lose any work. Feel free to rename something any time that doing so would make things easier. Don't rename an ingredient to be some different ingredient though, the price history won't work if you do that. Just add a new ingredient if I missed one."""
     )
     st.warning(
-        """When you enter a price you should see it removed from the missing prices and added to current prices immediately! If the tool isn't showing the price you entered, or is otherwise not responding, it didn't save the price. This should never happen, but if it does, stop entering prices and email me at giovanni.b.boff@gmail.com and I'll fix the tool."""
+        """When you enter a price you should see it removed from the missing prices and added to current prices immediately! If the tool isn't showing the price you entered, or is otherwise not responding, it didn't save the price. This should never happen. If it does, stop entering prices and email me at giovanni.b.boff@gmail.com so I can fix the tool. Feel free to send me an email with any questions you might have."""
     )
 
 
