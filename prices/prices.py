@@ -66,6 +66,19 @@ def display_ingredient_status():
     u.display_df(prices)
 
 
+with st.expander("How To Use This Tool"):
+    st.write(
+        """First, select the ingredient, enter the retail cost of the ingredient, enter the unit (whether it's sold by the pound, the gallon, etc.), and finally enter the quantity.
+             
+You don't have to calculate the cost per unit or anything. That's automated.
+             
+Don't select "unit" in the unit field for things that are not used "by unit". For example, Forminha isn't used by weight, one is used every time. If you buy 1000 at a time, you would enter the quantity as 1000, the unit as "unit" and enter the cost. However, flour is not used in recipes by unit, so enter the number of pounds/kg/etc. purchased a time."""
+    )
+    st.warning(
+        """When you enter a price you should see it removed from the missing prices and added to current prices immediately! If the tool isn't showing the price you entered, or is otherwise not responding, it didn't save the price. This should never happen, but if it does, stop entering prices and email me at giovanni.b.boff@gmail.com and I'll fix the tool."""
+    )
+
+
 with st.form("price_entry", clear_on_submit=True):
     ingredient_id = st.selectbox(
         "Ingredient",
